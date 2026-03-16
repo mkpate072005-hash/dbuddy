@@ -1,5 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -7,42 +5,47 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const apiKey = req.headers['x-api-key'];
-  if (!apiKey) return res.status(400).json({ error: 'Claude API key required. Add it in Settings.' });
+  const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(400).json({ error: 'Gemini API key required. Add it in Settings.' });
 
   try {
     const { naturalLanguage, dbType, schemaContext } = req.body;
-    const client = new Anthropic({ apiKey });
 
-    const systemPrompt = `You are an expert database query translator. Convert natural language questions into precise database queries.
-
+    const prompt = `You are an expert database query translator. Convert natural language to a precise database query.
 For SQL databases (PostgreSQL, MySQL, SQLite): Return a valid SQL SELECT/INSERT/UPDATE/DELETE statement.
-For MongoDB: Return a valid MongoDB query as a db.collection.find() or aggregate() call.
-
+For MongoDB: Return a valid MongoDB query as db.collection.find() or aggregate() call.
 Rules:
 - Return ONLY the query, no explanation, no markdown code blocks
-- Use proper syntax for the specific database type
+- Use proper syntax for ${dbType}
 - Use realistic table/collection names from the schema context if provided
 - Add proper JOINs, WHERE clauses, ORDER BY, LIMIT as needed
-- Use database-appropriate functions (e.g., NOW() for MySQL, CURRENT_TIMESTAMP for SQLite)`;
-
-    const userMessage = `Database type: ${dbType}
 ${schemaContext ? `Schema context: ${schemaContext}` : ''}
-
 Translate this to a ${dbType} query: "${naturalLanguage}"`;
 
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }]
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
+        })
+      }
+    );
 
-    const query = message.content[0].text.trim();
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'Gemini API error');
+    }
+
+    const data = await response.json();
+    let query = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    query = query.replace(/```sql\n?/g, '').replace(/```\n?/g, '').trim();
+
     return res.status(200).json({ query });
   } catch (err) {
     console.error('Translate query error:', err);
-    if (err.status === 401) return res.status(401).json({ error: 'Invalid Claude API key' });
     return res.status(500).json({ error: err.message });
   }
 }
