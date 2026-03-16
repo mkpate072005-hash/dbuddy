@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin, getUserFromToken } from './_supabase.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9,18 +9,10 @@ export default async function handler(req, res) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-
-  // Use anon key with user's token for RLS, service key as fallback
-  const supabase = createClient(supabaseUrl, serviceKey || anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } }
-  });
-
-  // Verify the token
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const { user, error: authError } = await getUserFromToken(token);
   if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+
+  const supabase = getSupabaseAdmin();
 
   try {
     if (req.method === 'GET') {
