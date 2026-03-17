@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
   const { user, error: authError } = await getUserFromToken(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+  if (authError || !user) return res.status(401).json({ error: 'Invalid token: ' + authError?.message });
 
   const supabase = getSupabaseAdmin();
 
