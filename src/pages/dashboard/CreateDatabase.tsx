@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Save, AlertCircle, ChevronDown, Table2, Hash, Key, Link2 } from 'lucide-react';
-import { generateSchema, createDatabase, fetchUserSettings } from '../../lib/api';
+import { generateSchema, createDatabase } from '../../lib/api';
 import GlassCard from '../../components/GlassCard';
 import GlowButton from '../../components/GlowButton';
 import CodeBlock from '../../components/CodeBlock';
@@ -41,13 +41,7 @@ export default function CreateDatabase() {
     setSaved(false);
 
     try {
-      const settings = await fetchUserSettings();
-      if (!settings.claude_api_key) {
-        setError('Please add your Claude API key in Settings first.');
-        setLoading(false);
-        return;
-      }
-      const result = await generateSchema(description, dbType, settings.claude_api_key);
+      const result = await generateSchema(description, dbType);
       setSchemaResult(result.schema);
       const tables = result.schema.tables || result.schema.collections || [];
       if (tables.length > 0) {
@@ -128,11 +122,7 @@ export default function CreateDatabase() {
 
       <AnimatePresence>
         {loading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <GlassCard className="p-8 text-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="relative w-16 h-16">
@@ -142,7 +132,7 @@ export default function CreateDatabase() {
                 </div>
                 <div>
                   <p className="text-white font-semibold">AI is analyzing your description...</p>
-                  <p className="text-gray-500 text-sm mt-1">Generating optimized schema with Claude</p>
+                  <p className="text-gray-500 text-sm mt-1">Generating optimized schema with Gemini</p>
                 </div>
               </div>
             </GlassCard>
@@ -150,12 +140,7 @@ export default function CreateDatabase() {
         )}
 
         {schemaResult && !loading && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            {/* Visual Schema */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
             {tables.length > 0 && (
               <div>
                 <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
@@ -163,12 +148,7 @@ export default function CreateDatabase() {
                 </h2>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {tables.map((table: SchemaTable, i: number) => (
-                    <motion.div
-                      key={table.name}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.06 }}
-                    >
+                    <motion.div key={table.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
                       <GlassCard className="overflow-hidden">
                         <div className="px-4 py-3 border-b border-white/10 bg-cyan-400/5 flex items-center gap-2">
                           <Table2 size={14} className="text-cyan-400" />
@@ -206,7 +186,6 @@ export default function CreateDatabase() {
               </div>
             )}
 
-            {/* SQL/JSON Code */}
             <div>
               <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
                 Generated {isSQL ? 'SQL' : 'Schema'}
@@ -214,7 +193,6 @@ export default function CreateDatabase() {
               <CodeBlock code={codeContent} language={isSQL ? 'sql' : 'json'} />
             </div>
 
-            {/* Save */}
             <GlassCard className="p-5">
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <div className="flex-1">
@@ -227,12 +205,7 @@ export default function CreateDatabase() {
                     placeholder="my_database"
                   />
                 </div>
-                <GlowButton
-                  variant={saved ? 'secondary' : 'primary'}
-                  onClick={handleSave}
-                  loading={saving}
-                  disabled={saved}
-                >
+                <GlowButton variant={saved ? 'secondary' : 'primary'} onClick={handleSave} loading={saving} disabled={saved}>
                   <span className="flex items-center gap-2">
                     <Save size={16} />
                     {saved ? '✓ Saved!' : 'Save to My Databases'}
