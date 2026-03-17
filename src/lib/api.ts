@@ -81,22 +81,22 @@ export async function updateUserSettings(display_name: string, claude_api_key: s
   return res.json();
 }
 
-export async function generateSchema(description: string, dbType: string, apiKey: string) {
+export async function generateSchema(description: string, dbType: string) {
   const headers = await getAuthHeaders();
   const res = await fetch('/api/generate-schema', {
     method: 'POST',
-    headers: { ...headers, 'X-Api-Key': apiKey },
+    headers,
     body: JSON.stringify({ description, dbType })
   });
   if (!res.ok) throw new Error((await res.json()).error);
   return res.json();
 }
 
-export async function translateQuery(naturalLanguage: string, dbType: string, schemaContext: string, apiKey: string) {
+export async function translateQuery(naturalLanguage: string, dbType: string, schemaContext: string) {
   const headers = await getAuthHeaders();
   const res = await fetch('/api/translate-query', {
     method: 'POST',
-    headers: { ...headers, 'X-Api-Key': apiKey },
+    headers,
     body: JSON.stringify({ naturalLanguage, dbType, schemaContext })
   });
   if (!res.ok) throw new Error((await res.json()).error);
