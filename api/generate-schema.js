@@ -5,8 +5,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'Gemini API key not configured on server.' });
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'API key not configured.' });
 
   try {
     const { description, dbType } = req.body;
@@ -20,25 +20,27 @@ Include primary keys, foreign keys, timestamps (created_at, updated_at), proper 
 Return ONLY valid JSON. No markdown. No explanation. No code blocks.
 Create a complete ${dbType} database schema for: ${description}`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 4096 }
-        })
-      }
-    );
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+        max_tokens: 4096
+      })
+    });
 
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.error?.message || 'Gemini API error');
+      throw new Error(err.error?.message || 'Groq API error');
     }
 
     const data = await response.json();
-    let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let content = data.choices?.[0]?.message?.content || '';
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
     let parsed;
