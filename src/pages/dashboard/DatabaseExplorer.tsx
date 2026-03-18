@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Database, Plus, Trash2, Search, History, Eye, BarChart2, ArrowLeft, ChevronDown, Copy, Check, Sparkles } from 'lucide-react';
+import { Database, Plus, Trash2, Search, History, Eye, BarChart2, ArrowLeft, Copy, Check, Sparkles } from 'lucide-react';
 import { fetchDatabases, translateQuery, saveQuery, fetchQueries } from '../../lib/api';
 import GlassCard from '../../components/GlassCard';
 import GlowButton from '../../components/GlowButton';
