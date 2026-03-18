@@ -5,8 +5,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'Gemini API key not configured on server.' });
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'API key not configured.' });
 
   try {
     const { naturalLanguage, dbType, schemaContext } = req.body;
@@ -22,25 +22,27 @@ Rules:
 ${schemaContext ? `Schema context: ${schemaContext}` : ''}
 Translate this to a ${dbType} query: "${naturalLanguage}"`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
-        })
-      }
-    );
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
+        max_tokens: 1024
+      })
+    });
 
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.error?.message || 'Gemini API error');
+      throw new Error(err.error?.message || 'Groq API error');
     }
 
     const data = await response.json();
-    let query = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let query = data.choices?.[0]?.message?.content || '';
     query = query.replace(/```sql\n?/g, '').replace(/```\n?/g, '').trim();
 
     return res.status(200).json({ query });
