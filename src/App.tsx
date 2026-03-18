@@ -14,8 +14,8 @@ import MyDatabases from './pages/dashboard/MyDatabases';
 import QueryBuilder from './pages/dashboard/QueryBuilder';
 import Export from './pages/dashboard/Export';
 import Settings from './pages/dashboard/Settings';
+import DatabaseExplorer from './pages/dashboard/DatabaseExplorer';
 
-// Handle Google OAuth redirect on app startup
 handleGoogleRedirect();
 
 export default function App() {
@@ -28,48 +28,13 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <Overview />
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/create" element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <CreateDatabase />
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/databases" element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <MyDatabases />
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/query" element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <QueryBuilder />
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/export" element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <Export />
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/settings" element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <Settings />
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><Overview /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/dashboard/create" element={<ProtectedRoute><DashboardLayout><CreateDatabase /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/dashboard/databases" element={<ProtectedRoute><DashboardLayout><MyDatabases /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/dashboard/databases/:id" element={<ProtectedRoute><DashboardLayout><DatabaseExplorer /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/dashboard/query" element={<ProtectedRoute><DashboardLayout><QueryBuilder /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/dashboard/export" element={<ProtectedRoute><DashboardLayout><Export /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/dashboard/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
